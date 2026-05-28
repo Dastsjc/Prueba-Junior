@@ -370,10 +370,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8c2007ad71dc4baba89719ca8315f5cf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  width: 20
+  width: 30
   height: 20
-  mineCount: 25
+  mineCount: 81
   revealDelay: 0.05
+  screenUsage: 0.8
   cellPrefab: {fileID: 8317659218775531599, guid: f3cc9b74ab5c41548a8c451d4620e4c9, type: 3}
   numberSprites:
   - {fileID: 317337212, guid: 68ef8e62cb529dc48b4676c72d87e6c8, type: 3}
