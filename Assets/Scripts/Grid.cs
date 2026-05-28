@@ -8,6 +8,7 @@ public class Grid : MonoBehaviour
     public int height = 10;
     public int mineCount = 15; // Increased density for a more "classic" feel
     public float revealDelay = 0.05f;
+    public float cellScale = 1.0f; // New scale parameter
 
     public Cell cellPrefab;
     private Cell[,] cells;
@@ -27,7 +28,8 @@ public class Grid : MonoBehaviour
     {
         if (unrevealedSprite != null)
         {
-            spacing = unrevealedSprite.bounds.size.x;
+            // Spacing is base sprite size * scale
+            spacing = unrevealedSprite.bounds.size.x * cellScale;
         }
 
         GenerateGrid();
@@ -44,6 +46,9 @@ public class Grid : MonoBehaviour
                 Vector3 position = new Vector3(x * spacing, y * spacing, 0);
                 Cell cell = Instantiate(cellPrefab, position, Quaternion.identity, transform);
                 
+                // Apply the scale to the cell prefab
+                cell.transform.localScale = new Vector3(cellScale, cellScale, 1f);
+
                 cell.numberSprites = numberSprites;
                 cell.emptyRevealedSprite = emptyRevealedSprite;
                 cell.flagSprite = flagSprite;
