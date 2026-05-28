@@ -6,9 +6,10 @@ public class Grid : MonoBehaviour
 {
     public int width = 10;
     public int height = 10;
-    public int mineCount = 15; // Increased density for a more "classic" feel
+    public int mineCount = 15;
     public float revealDelay = 0.05f;
-    public float cellScale = 1.0f; // New scale parameter
+    [Range(0.1f, 0.9f)]
+    public float screenUsage = 0.8f; // How much of the screen the grid should take
 
     public Cell cellPrefab;
     private Cell[,] cells;
@@ -23,30 +24,57 @@ public class Grid : MonoBehaviour
     private bool gameOver = false;
     private bool firstClick = true;
     private float spacing = 1f;
+    private float cellScale = 1.0f;
 
     void Start()
     {
-        if (unrevealedSprite != null)
-        {
-            // Spacing is base sprite size * scale
-            spacing = unrevealedSprite.bounds.size.x * cellScale;
-        }
-
+        CalculateScaleAndSpacing();
         GenerateGrid();
+    }
+
+    void CalculateScaleAndSpacing()
+    {
+        if (unrevealedSprite == null) return;
+
+        // Get camera dimensions in world units
+        float camHeight = Camera.main.orthographicSize * 2f;
+        float camWidth = camHeight * Camera.main.aspect;
+
+        // Reserve space for UI (using the screenUsage percentage)
+        float availableWidth = camWidth * screenUsage;
+        float availableHeight = camHeight * screenUsage;
+
+        // Sprite base size
+        float spriteSize = unrevealedSprite.bounds.size.x;
+
+        // Calculate scale needed to fit width and height
+        float scaleX = availableWidth / (width * spriteSize);
+        float scaleY = availableHeight / (height * spriteSize);
+
+        // Use the smaller scale to ensure it fits in both dimensions
+        cellScale = Mathf.Min(scaleX, scaleY);
+        spacing = spriteSize * cellScale;
     }
 
     void GenerateGrid()
     {
         cells = new Cell[width, height];
 
+        // Calculate offset to center the grid
+        float gridWidth = (width - 1) * spacing;
+        float gridHeight = (height - 1) * spacing;
+        
+        // Shift grid slightly to the left to leave room for UI on the right
+        float xOffset = -gridWidth / 2f - (Camera.main.orthographicSize * Camera.main.aspect * (1f - screenUsage) / 2f);
+        float yOffset = -gridHeight / 2f;
+
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
             {
-                Vector3 position = new Vector3(x * spacing, y * spacing, 0);
+                Vector3 position = new Vector3(xOffset + (x * spacing), yOffset + (y * spacing), 0);
                 Cell cell = Instantiate(cellPrefab, position, Quaternion.identity, transform);
                 
-                // Apply the scale to the cell prefab
                 cell.transform.localScale = new Vector3(cellScale, cellScale, 1f);
 
                 cell.numberSprites = numberSprites;
@@ -59,14 +87,6 @@ public class Grid : MonoBehaviour
                 cells[x, y] = cell;
             }
         }
-
-        // Center the camera
-        float centerX = (width - 1) * spacing / 2f;
-        float centerY = (height - 1) * spacing / 2f;
-        Camera.main.transform.position = new Vector3(centerX, centerY, -10);
-        
-        // Adjust camera size to fit the grid
-        Camera.main.orthographicSize = Mathf.Max(width, height) * spacing / 2f + 1f;
     }
 
     void PlaceMines(int avoidX, int avoidY)
