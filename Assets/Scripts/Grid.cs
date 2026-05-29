@@ -26,23 +26,91 @@ public class Grid : MonoBehaviour
     private float spacing = 1f;
     private float cellScale = 1.0f;
 
+    [Header("UI Constraints")]
+    public RectTransform gameArea;
+    public RectTransform gameLine;
+
+    private Vector3 gridCenter;
+    private Vector2 lastScreenSize;
+
     void Start()
     {
+        lastScreenSize = new Vector2(Screen.width, Screen.height);
         CalculateScaleAndSpacing();
         GenerateGrid();
+    }
+
+    void Update()
+    {
+        if (Screen.width != lastScreenSize.x || Screen.height != lastScreenSize.y)
+        {
+            lastScreenSize = new Vector2(Screen.width, Screen.height);
+            RepositionGrid();
+        }
+    }
+
+    public void RepositionGrid()
+    {
+        if (cells == null) return;
+        
+        CalculateScaleAndSpacing();
+
+        float totalGridWidth = (width - 1) * spacing;
+        float totalGridHeight = (height - 1) * spacing;
+        
+        float startX = gridCenter.x - (totalGridWidth / 2f);
+        float startY = gridCenter.y - (totalGridHeight / 2f);
+
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                if (cells[x, y] != null)
+                {
+                    Vector3 position = new Vector3(startX + (x * spacing), startY + (y * spacing), 0);
+                    cells[x, y].transform.position = position;
+                    cells[x, y].transform.localScale = new Vector3(cellScale, cellScale, 1f);
+                }
+            }
+        }
     }
 
     void CalculateScaleAndSpacing()
     {
         if (unrevealedSprite == null) return;
 
-        // Get camera dimensions in world units
-        float camHeight = Camera.main.orthographicSize * 2f;
-        float camWidth = camHeight * Camera.main.aspect;
+        float availableWidth, availableHeight;
 
-        // Reserve space for UI (using the screenUsage percentage)
-        float availableWidth = camWidth * screenUsage;
-        float availableHeight = camHeight * screenUsage;
+        if (gameArea != null && gameLine != null)
+        {
+            Vector3[] cornersArea = new Vector3[4];
+            Vector3[] cornersLine = new Vector3[4];
+            gameArea.GetWorldCorners(cornersArea);
+            gameLine.GetWorldCorners(cornersLine);
+
+            // Find the intersection (most constrained bounds)
+            float minX = Mathf.Max(cornersArea[0].x, cornersLine[0].x);
+            float minY = Mathf.Max(cornersArea[0].y, cornersLine[0].y);
+            float maxX = Mathf.Min(cornersArea[2].x, cornersLine[2].x);
+            float maxY = Mathf.Min(cornersArea[2].y, cornersLine[2].y);
+
+            availableWidth = maxX - minX;
+            availableHeight = maxY - minY;
+            gridCenter = new Vector3((minX + maxX) / 2f, (minY + maxY) / 2f, 0);
+        }
+        else
+        {
+            // Fallback to camera-based scaling if UI constraints are not provided
+            float camHeight = Camera.main.orthographicSize * 2f;
+            float camWidth = camHeight * Camera.main.aspect;
+
+            availableWidth = camWidth * screenUsage;
+            availableHeight = camHeight * screenUsage;
+            
+            // Original centering logic
+            float xOffset = -(camWidth * (1f - screenUsage) / 2f);
+            gridCenter = new Vector3(xOffset, 0, 0);
+        }
 
         // Sprite base size
         float spriteSize = unrevealedSprite.bounds.size.x;
@@ -60,19 +128,18 @@ public class Grid : MonoBehaviour
     {
         cells = new Cell[width, height];
 
-        // Calculate offset to center the grid
-        float gridWidth = (width - 1) * spacing;
-        float gridHeight = (height - 1) * spacing;
+        // Calculate offset to center the grid within gridCenter
+        float totalGridWidth = (width - 1) * spacing;
+        float totalGridHeight = (height - 1) * spacing;
         
-        // Shift grid slightly to the left to leave room for UI on the right
-        float xOffset = -gridWidth / 2f - (Camera.main.orthographicSize * Camera.main.aspect * (1f - screenUsage) / 2f);
-        float yOffset = -gridHeight / 2f;
+        float startX = gridCenter.x - (totalGridWidth / 2f);
+        float startY = gridCenter.y - (totalGridHeight / 2f);
 
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
             {
-                Vector3 position = new Vector3(xOffset + (x * spacing), yOffset + (y * spacing), 0);
+                Vector3 position = new Vector3(startX + (x * spacing), startY + (y * spacing), 0);
                 Cell cell = Instantiate(cellPrefab, position, Quaternion.identity, transform);
                 
                 cell.transform.localScale = new Vector3(cellScale, cellScale, 1f);
