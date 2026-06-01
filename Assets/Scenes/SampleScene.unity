@@ -1132,9 +1132,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8c2007ad71dc4baba89719ca8315f5cf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  width: 25
+  width: 40
   height: 25
-  mineCount: 300
+  mineCount: 2
   revealDelay: 0.05
   screenUsage: 0.8
   cellPrefab: {fileID: 8317659218775531599, guid: f3cc9b74ab5c41548a8c451d4620e4c9, type: 3}
@@ -1154,6 +1154,8 @@ MonoBehaviour:
   gameArea: {fileID: 909330389}
   gameLine: {fileID: 974516374}
   timerText: {fileID: 2131262535}
+  flagText: {fileID: 466561081}
+  flags: 0
 --- !u!4 &2018837875
 Transform:
   m_ObjectHideFlags: 0

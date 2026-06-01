@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
+using JetBrains.Annotations;
 
 public class Grid : MonoBehaviour
 {
@@ -36,13 +37,24 @@ public class Grid : MonoBehaviour
     private float elapsedTime = 0f;
     private bool isTimerActive = false;
 
+    [Header("Flags")]
+    public TextMeshProUGUI flagText;
+    private int maxFlags;
+    [HideInInspector]
+    public int flags;
+    
+
+
     private Vector3 gridCenter;
     private Vector2 lastScreenSize;
 
     private bool isRegenerated = false;
+    
 
     void Start()
     {
+        flags = mineCount;
+        maxFlags = flags;
         lastScreenSize = new Vector2(Screen.width, Screen.height);
         CalculateScaleAndSpacing();
         GenerateGrid();
@@ -75,7 +87,15 @@ public class Grid : MonoBehaviour
     {
         if (timerText != null)
         {
-            timerText.text = Mathf.FloorToInt(elapsedTime).ToString("D3");
+            timerText.text = Mathf.FloorToInt(elapsedTime).ToString();
+        }
+    }
+
+    void UpdateFlagUI()
+    {
+        if (flagText != null)
+        {
+            flagText.text = flags.ToString();
         }
     }
 
@@ -191,6 +211,8 @@ public class Grid : MonoBehaviour
     {
         gameOver = false;
         isRegenerated = true;
+        flags = mineCount;
+        UpdateFlagUI();
         StartTimer();
         if (this.gameObject.transform.GetChild(0))
         {
@@ -358,8 +380,20 @@ public class Grid : MonoBehaviour
     {
         if (gameOver || cells[x, y].isRevealed) return;
 
-        cells[x, y].isFlagged = !cells[x, y].isFlagged;
-        cells[x, y].UpdateVisuals();
+        if (cells[x, y].isFlagged)
+        {
+            cells[x, y].isFlagged = false;
+            flags++;
+            cells[x, y].UpdateVisuals();
+        }
+        else if (flags > 0)
+        {
+            cells[x, y].isFlagged = true;
+            flags--;
+            cells[x, y].UpdateVisuals();
+        }
+
+        UpdateFlagUI();
     }
 
     void CheckWinCondition()
