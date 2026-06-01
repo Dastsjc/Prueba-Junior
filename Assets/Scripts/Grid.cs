@@ -33,6 +33,8 @@ public class Grid : MonoBehaviour
     private Vector3 gridCenter;
     private Vector2 lastScreenSize;
 
+    private bool isRegenerated = false;
+
     void Start()
     {
         lastScreenSize = new Vector2(Screen.width, Screen.height);
@@ -126,6 +128,7 @@ public class Grid : MonoBehaviour
 
     void GenerateGrid()
     {
+
         cells = new Cell[width, height];
 
         // Calculate offset to center the grid within gridCenter
@@ -154,6 +157,49 @@ public class Grid : MonoBehaviour
                 cells[x, y] = cell;
             }
         }
+    }
+
+    public void RegenerateGrid()
+    {
+        gameOver = false;
+        isRegenerated = true;
+        if (this.gameObject.transform.GetChild(0))
+        {
+            int childs = transform.childCount;
+            for (int i = childs - 1; i >= 0; i--)
+            {
+                GameObject.Destroy(transform.GetChild(i).gameObject);
+            }
+        }
+        cells = new Cell[width, height];
+
+        // Calculate offset to center the grid within gridCenter
+        float totalGridWidth = (width - 1) * spacing;
+        float totalGridHeight = (height - 1) * spacing;
+
+        float startX = gridCenter.x - (totalGridWidth / 2f);
+        float startY = gridCenter.y - (totalGridHeight / 2f);
+
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                Vector3 position = new Vector3(startX + (x * spacing), startY + (y * spacing), 0);
+                Cell cell = Instantiate(cellPrefab, position, Quaternion.identity, transform);
+
+                cell.transform.localScale = new Vector3(cellScale, cellScale, 1f);
+
+                cell.numberSprites = numberSprites;
+                cell.emptyRevealedSprite = emptyRevealedSprite;
+                cell.flagSprite = flagSprite;
+                cell.mineSprite = mineSprite;
+                cell.unrevealedSprite = unrevealedSprite;
+
+                cell.Setup(x, y, this);
+                cells[x, y] = cell;
+            }
+        }
+
     }
 
     void PlaceMines(int avoidX, int avoidY)
@@ -212,9 +258,10 @@ public class Grid : MonoBehaviour
     {
         if (gameOver || cells[x, y].isRevealed || cells[x, y].isFlagged) return;
 
-        if (firstClick)
+        if (firstClick || isRegenerated)
         {
             firstClick = false;
+            isRegenerated = false;
             PlaceMines(x, y);
             CalculateNeighbors();
         }
