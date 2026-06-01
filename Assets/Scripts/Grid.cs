@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using TMPro;
 
 public class Grid : MonoBehaviour
 {
@@ -30,6 +31,11 @@ public class Grid : MonoBehaviour
     public RectTransform gameArea;
     public RectTransform gameLine;
 
+    [Header("Timer")]
+    public TextMeshProUGUI timerText;
+    private float elapsedTime = 0f;
+    private bool isTimerActive = false;
+
     private Vector3 gridCenter;
     private Vector2 lastScreenSize;
 
@@ -40,6 +46,7 @@ public class Grid : MonoBehaviour
         lastScreenSize = new Vector2(Screen.width, Screen.height);
         CalculateScaleAndSpacing();
         GenerateGrid();
+        StartTimer();
     }
 
     void Update()
@@ -48,6 +55,27 @@ public class Grid : MonoBehaviour
         {
             lastScreenSize = new Vector2(Screen.width, Screen.height);
             RepositionGrid();
+        }
+
+        if (isTimerActive)
+        {
+            elapsedTime += Time.deltaTime;
+            UpdateTimerUI();
+        }
+    }
+
+    void StartTimer()
+    {
+        elapsedTime = 0f;
+        isTimerActive = true;
+        UpdateTimerUI();
+    }
+
+    void UpdateTimerUI()
+    {
+        if (timerText != null)
+        {
+            timerText.text = Mathf.FloorToInt(elapsedTime).ToString("D3");
         }
     }
 
@@ -163,6 +191,7 @@ public class Grid : MonoBehaviour
     {
         gameOver = false;
         isRegenerated = true;
+        StartTimer();
         if (this.gameObject.transform.GetChild(0))
         {
             int childs = transform.childCount;
@@ -353,6 +382,7 @@ public class Grid : MonoBehaviour
     void GameOver(bool win)
     {
         gameOver = true;
+        isTimerActive = false;
         if (win)
         {
             Debug.Log("You Win!");
