@@ -59,13 +59,53 @@ public class Cell : MonoBehaviour
         }
     }
 
-    private void OnMouseOver()
+    private float pressTime;
+    private bool isPressing;
+    private bool flagToggled;
+    [SerializeField] private float longPressDuration = 0.5f;
+
+    private void Update()
+    {
+        if (isPressing && !flagToggled)
+        {
+            if (Time.time - pressTime >= longPressDuration)
+            {
+                grid.ToggleFlag(x, y);
+                flagToggled = true;
+            }
+        }
+    }
+
+    private void OnMouseDown()
     {
         if (Input.GetMouseButtonDown(0))
         {
-            grid.RevealCell(x, y);
+            pressTime = Time.time;
+            isPressing = true;
+            flagToggled = false;
         }
-        else if (Input.GetMouseButtonDown(1))
+    }
+
+    private void OnMouseUp()
+    {
+        if (isPressing)
+        {
+            if (!flagToggled)
+            {
+                grid.RevealCell(x, y);
+            }
+            isPressing = false;
+        }
+    }
+
+    private void OnMouseExit()
+    {
+        isPressing = false;
+    }
+
+    private void OnMouseOver()
+    {
+        if (Input.GetMouseButtonDown(1))
         {
             grid.ToggleFlag(x, y);
         }
