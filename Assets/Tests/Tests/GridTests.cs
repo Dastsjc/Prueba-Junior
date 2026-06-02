@@ -95,4 +95,58 @@ public class GridTests
         SpriteRenderer sr = centerCell.GetComponent<SpriteRenderer>();
         Assert.AreEqual(grid.emptyRevealedSprite, sr.sprite, "Cell with zero neighbors should use the emptyRevealedSprite (blank)");
     }
+
+    [Test]
+    public void FlagCount_MatchesBombCount_AndCellStatesAreCorrect()
+    {
+        // Arrange
+        grid.width = 5;
+        grid.height = 5;
+        grid.mineCount = 5;
+
+        // Manually initialize flags as it normally happens in Start()
+        grid.flags = grid.mineCount;
+
+        MethodInfo calcMethod = typeof(Grid).GetMethod("CalculateScaleAndSpacing", BindingFlags.Instance | BindingFlags.NonPublic);
+        calcMethod.Invoke(grid, null);
+
+        MethodInfo generateGridMethod = typeof(Grid).GetMethod("GenerateGrid", BindingFlags.Instance | BindingFlags.NonPublic);
+        generateGridMethod.Invoke(grid, null);
+
+        FieldInfo cellsField = typeof(Grid).GetField("cells", BindingFlags.Instance | BindingFlags.NonPublic);
+        Cell[,] cells = (Cell[,])cellsField.GetValue(grid);
+
+        // Assert initial state
+        Assert.AreEqual(5, grid.flags, "Initial flag count should match mine count");
+
+        // Act & Assert: Flag a cell
+        grid.ToggleFlag(0, 0);
+        Assert.AreEqual(4, grid.flags, "Flag count should decrease after flagging a cell");
+        Assert.IsTrue(cells[0, 0].isFlagged, "Cell (0,0) should be flagged");
+
+        // Act & Assert: Unflag the same cell
+        grid.ToggleFlag(0, 0);
+        Assert.AreEqual(5, grid.flags, "Flag count should increase after unflagging a cell");
+        Assert.IsFalse(cells[0, 0].isFlagged, "Cell (0,0) should be unflagged");
+
+        // Act: Flag all allowed cells (5 cells)
+        for (int i = 0; i < 5; i++)
+        {
+            grid.ToggleFlag(i, 0);
+        }
+
+        // Assert
+        Assert.AreEqual(0, grid.flags, "Flag count should be 0 after flagging 5 cells");
+        for (int i = 0; i < 5; i++)
+        {
+            Assert.IsTrue(cells[i, 0].isFlagged, $"Cell ({i},0) should be flagged");
+        }
+
+        // Act: Try to flag one more cell
+        grid.ToggleFlag(0, 1);
+
+        // Assert
+        Assert.AreEqual(0, grid.flags, "Flag count should remain 0 after trying to flag more than mineCount");
+        Assert.IsFalse(cells[0, 1].isFlagged, "Cell (0,1) should not be flagged when no flags are left");
+    }
 }
