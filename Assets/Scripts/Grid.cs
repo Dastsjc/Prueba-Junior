@@ -27,6 +27,9 @@ public class Grid : MonoBehaviour
     private bool firstClick = true;
     private float spacing = 1f;
     private float cellScale = 1.0f;
+    [HideInInspector]
+    public bool winState;
+
 
     [Header("UI Constraints")]
     public RectTransform gameArea;
@@ -39,7 +42,6 @@ public class Grid : MonoBehaviour
 
     [Header("Flags")]
     public TextMeshProUGUI flagText;
-    private int maxFlags;
     [HideInInspector]
     public int flags;
     
@@ -54,7 +56,7 @@ public class Grid : MonoBehaviour
     void Start()
     {
         flags = mineCount;
-        maxFlags = flags;
+        winState = false;
         lastScreenSize = new Vector2(Screen.width, Screen.height);
         CalculateScaleAndSpacing();
         GenerateGrid();
@@ -419,7 +421,7 @@ public class Grid : MonoBehaviour
         isTimerActive = false;
         if (win)
         {
-            Debug.Log("You Win!");
+            winState = true;
         }
         else
         {
