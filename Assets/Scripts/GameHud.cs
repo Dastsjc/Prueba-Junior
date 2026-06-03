@@ -1,54 +1,61 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-public class GameHud : MonoBehaviour
+namespace Buscaminas.Gameplay
 {
-    [SerializeField] private GridManager gridManager;
-    [SerializeField] private Image faceImage;
-    [SerializeField] private Sprite happyFace;
-    [SerializeField] private Sprite dohFace;
-
-    void OnEnable()
+    /// <summary>
+    /// Manages the face icon in the HUD. Swaps between the happy and doh face
+    /// sprites based on game win/lose/restart events from <see cref="GridManager"/>.
+    /// </summary>
+    public class GameHud : MonoBehaviour
     {
-        if (gridManager != null)
+        [SerializeField] private GridManager gridManager;
+        [SerializeField] private Image faceImage;
+        [SerializeField] private Sprite happyFace;
+        [SerializeField] private Sprite dohFace;
+
+        void OnEnable()
         {
-            gridManager.OnLose += HandleLose;
-            gridManager.OnWin += HandleWin;
-            gridManager.OnRestart += HandleRestart;
+            if (gridManager != null)
+            {
+                gridManager.OnLose += HandleLose;
+                gridManager.OnWin += HandleWin;
+                gridManager.OnRestart += HandleRestart;
+            }
         }
-    }
 
-    void OnDisable()
-    {
-        if (gridManager != null)
+        void OnDisable()
         {
-            gridManager.OnLose -= HandleLose;
-            gridManager.OnWin -= HandleWin;
-            gridManager.OnRestart -= HandleRestart;
+            if (gridManager != null)
+            {
+                gridManager.OnLose -= HandleLose;
+                gridManager.OnWin -= HandleWin;
+                gridManager.OnRestart -= HandleRestart;
+            }
         }
-    }
 
-    void HandleLose()
-    {
-        if (faceImage != null && dohFace != null)
+        void HandleLose()
         {
-            faceImage.sprite = dohFace;
+            if (faceImage != null && dohFace != null)
+            {
+                faceImage.sprite = dohFace;
+            }
         }
-    }
 
-    void HandleWin()
-    {
-        if (faceImage != null && happyFace != null)
+        void HandleWin()
         {
-            faceImage.sprite = happyFace;
+            if (faceImage != null && happyFace != null)
+            {
+                faceImage.sprite = happyFace;
+            }
         }
-    }
 
-    void HandleRestart()
-    {
-        if (faceImage != null && happyFace != null)
+        void HandleRestart()
         {
-            faceImage.sprite = happyFace;
+            if (faceImage != null && happyFace != null)
+            {
+                faceImage.sprite = happyFace;
+            }
         }
     }
 }

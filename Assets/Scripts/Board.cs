@@ -2,240 +2,285 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Board
+namespace Buscaminas.Gameplay
 {
-    public int Width { get; }
-    public int Height { get; }
-    public int MineCount { get; }
-    public int Flags { get; private set; }
-    public bool IsGameOver { get; private set; }
-    public bool IsWin { get; private set; }
-
-    public event Action OnWin;
-    public event Action OnLose;
-
-    private struct CellData
+    /// <summary>
+    /// Pure C# class that holds all Minesweeper game logic and state.
+    /// No MonoBehaviour dependency — fully unit-testable without GameObjects.
+    /// </summary>
+    public class Board
     {
-        public bool isMine;
-        public bool isRevealed;
-        public bool isFlagged;
-        public int adjacentMines;
-    }
+        /// <summary>Grid width in cells.</summary>
+        public int Width { get; }
 
-    private CellData[,] cells;
-    private bool minesPlaced;
+        /// <summary>Grid height in cells.</summary>
+        public int Height { get; }
 
-    public Board(int width, int height, int mineCount)
-    {
-        Width = width;
-        Height = height;
-        MineCount = mineCount;
-        Flags = mineCount;
-        cells = new CellData[width, height];
-    }
+        /// <summary>Total number of mines on the board.</summary>
+        public int MineCount { get; }
 
-    public bool IsMine(int x, int y) => cells[x, y].isMine;
-    public bool IsRevealed(int x, int y) => cells[x, y].isRevealed;
-    public bool IsFlagged(int x, int y) => cells[x, y].isFlagged;
-    public int AdjacentMines(int x, int y) => cells[x, y].adjacentMines;
+        /// <summary>Number of flags remaining (starts at MineCount).</summary>
+        public int Flags { get; private set; }
 
-    public List<List<Vector2Int>> Reveal(int x, int y)
-    {
-        if (IsGameOver || cells[x, y].isRevealed || cells[x, y].isFlagged)
-            return null;
+        /// <summary>Whether the game has ended (win or lose).</summary>
+        public bool IsGameOver { get; private set; }
 
-        if (!minesPlaced)
+        /// <summary>Whether the player won. Only meaningful when <see cref="IsGameOver"/> is true.</summary>
+        public bool IsWin { get; private set; }
+
+        /// <summary>Fired once when the player wins.</summary>
+        public event Action OnWin;
+
+        /// <summary>Fired once when the player hits a mine.</summary>
+        public event Action OnLose;
+
+        private struct CellData
         {
-            minesPlaced = true;
-            PlaceMines(x, y);
-            CalculateNeighbors();
+            public bool isMine;
+            public bool isRevealed;
+            public bool isFlagged;
+            public int adjacentMines;
         }
 
-        if (cells[x, y].isMine)
+        private CellData[,] cells;
+        private bool minesPlaced;
+
+        /// <summary>
+        /// Creates a new board with the given dimensions. Mines are placed lazily
+        /// on the first <see cref="Reveal"/> call (first-click safety).
+        /// </summary>
+        public Board(int width, int height, int mineCount)
         {
-            cells[x, y].isRevealed = true;
-            GameOver(false);
-            return null;
+            Width = width;
+            Height = height;
+            MineCount = mineCount;
+            Flags = mineCount;
+            cells = new CellData[width, height];
         }
 
-        var levels = new List<List<Vector2Int>>();
-        var visited = new bool[Width, Height];
-        var queue = new Queue<Vector2Int>();
-        queue.Enqueue(new Vector2Int(x, y));
-        visited[x, y] = true;
+        /// <summary>Returns true if the cell at (x, y) contains a mine.</summary>
+        public bool IsMine(int x, int y) => cells[x, y].isMine;
 
-        while (queue.Count > 0)
+        /// <summary>Returns true if the cell at (x, y) has been revealed.</summary>
+        public bool IsRevealed(int x, int y) => cells[x, y].isRevealed;
+
+        /// <summary>Returns true if the cell at (x, y) is flagged.</summary>
+        public bool IsFlagged(int x, int y) => cells[x, y].isFlagged;
+
+        /// <summary>Returns the number of adjacent mines for the cell at (x, y).</summary>
+        public int AdjacentMines(int x, int y) => cells[x, y].adjacentMines;
+
+        /// <summary>
+        /// Reveals the cell at (x, y). On the first call, mines are placed
+        /// avoiding a 3×3 safe area around (x, y).
+        /// Returns BFS levels for animated reveal, or null if the cell was a mine
+        /// (game over) or already revealed/flagged.
+        /// </summary>
+        public List<List<Vector2Int>> Reveal(int x, int y)
         {
-            int levelSize = queue.Count;
-            var level = new List<Vector2Int>();
+            if (IsGameOver || cells[x, y].isRevealed || cells[x, y].isFlagged)
+                return null;
 
-            for (int i = 0; i < levelSize; i++)
+            if (!minesPlaced)
             {
-                Vector2Int current = queue.Dequeue();
-                int cx = current.x;
-                int cy = current.y;
-
-                if (cells[cx, cy].isRevealed || cells[cx, cy].isFlagged)
-                    continue;
-
-                cells[cx, cy].isRevealed = true;
-                level.Add(current);
-
-                if (cells[cx, cy].adjacentMines == 0)
-                {
-                    AddNeighborsToQueue(cx, cy, queue, visited);
-                }
+                minesPlaced = true;
+                PlaceMines(x, y);
+                CalculateNeighbors();
             }
 
-            if (level.Count > 0)
-                levels.Add(level);
-        }
-
-        CheckWinCondition();
-        return levels;
-    }
-
-    public void ToggleFlag(int x, int y)
-    {
-        if (IsGameOver || cells[x, y].isRevealed) return;
-
-        if (cells[x, y].isFlagged)
-        {
-            cells[x, y].isFlagged = false;
-            Flags++;
-        }
-        else if (Flags > 0)
-        {
-            cells[x, y].isFlagged = true;
-            Flags--;
-        }
-    }
-
-    public void RevealAllMines()
-    {
-        for (int x = 0; x < Width; x++)
-        {
-            for (int y = 0; y < Height; y++)
+            if (cells[x, y].isMine)
             {
-                if (cells[x, y].isMine)
-                {
-                    cells[x, y].isRevealed = true;
-                }
+                cells[x, y].isRevealed = true;
+                GameOver(false);
+                return null;
             }
-        }
-    }
 
-    private void PlaceMines(int avoidX, int avoidY)
-    {
-        var candidates = new List<Vector2Int>();
+            var levels = new List<List<Vector2Int>>();
+            var visited = new bool[Width, Height];
+            var queue = new Queue<Vector2Int>();
+            queue.Enqueue(new Vector2Int(x, y));
+            visited[x, y] = true;
 
-        for (int x = 0; x < Width; x++)
-        {
-            for (int y = 0; y < Height; y++)
+            while (queue.Count > 0)
             {
-                bool inAvoidArea = (x >= avoidX - 1 && x <= avoidX + 1 &&
-                                    y >= avoidY - 1 && y <= avoidY + 1);
-                if (!inAvoidArea)
+                int levelSize = queue.Count;
+                var level = new List<Vector2Int>();
+
+                for (int i = 0; i < levelSize; i++)
                 {
-                    candidates.Add(new Vector2Int(x, y));
-                }
-            }
-        }
+                    Vector2Int current = queue.Dequeue();
+                    int cx = current.x;
+                    int cy = current.y;
 
-        System.Random rng = new System.Random();
-        for (int i = candidates.Count - 1; i > 0; i--)
-        {
-            int j = rng.Next(i + 1);
-            Vector2Int temp = candidates[i];
-            candidates[i] = candidates[j];
-            candidates[j] = temp;
-        }
+                    if (cells[cx, cy].isRevealed || cells[cx, cy].isFlagged)
+                        continue;
 
-        int minesToPlace = Math.Min(MineCount, candidates.Count);
-        for (int i = 0; i < minesToPlace; i++)
-        {
-            cells[candidates[i].x, candidates[i].y].isMine = true;
-        }
-    }
+                    cells[cx, cy].isRevealed = true;
+                    level.Add(current);
 
-    private void CalculateNeighbors()
-    {
-        for (int x = 0; x < Width; x++)
-        {
-            for (int y = 0; y < Height; y++)
-            {
-                if (cells[x, y].isMine) continue;
-
-                int mines = 0;
-                for (int xi = -1; xi <= 1; xi++)
-                {
-                    for (int yi = -1; yi <= 1; yi++)
+                    if (cells[cx, cy].adjacentMines == 0)
                     {
-                        if (xi == 0 && yi == 0) continue;
-
-                        int nx = x + xi;
-                        int ny = y + yi;
-
-                        if (nx >= 0 && nx < Width && ny >= 0 && ny < Height)
-                        {
-                            if (cells[nx, ny].isMine) mines++;
-                        }
+                        AddNeighborsToQueue(cx, cy, queue, visited);
                     }
                 }
-                cells[x, y].adjacentMines = mines;
+
+                if (level.Count > 0)
+                    levels.Add(level);
+            }
+
+            CheckWinCondition();
+            return levels;
+        }
+
+        /// <summary>
+        /// Toggles the flag on the cell at (x, y). Does nothing if the game is over
+        /// or the cell is already revealed. Flags are limited to <see cref="MineCount"/>.
+        /// </summary>
+        public void ToggleFlag(int x, int y)
+        {
+            if (IsGameOver || cells[x, y].isRevealed) return;
+
+            if (cells[x, y].isFlagged)
+            {
+                cells[x, y].isFlagged = false;
+                Flags++;
+            }
+            else if (Flags > 0)
+            {
+                cells[x, y].isFlagged = true;
+                Flags--;
             }
         }
-    }
 
-    private void AddNeighborsToQueue(int x, int y, Queue<Vector2Int> queue, bool[,] visited)
-    {
-        for (int xi = -1; xi <= 1; xi++)
+        /// <summary>
+        /// Reveals all mine cells. Called by the view layer when the player loses.
+        /// </summary>
+        public void RevealAllMines()
         {
-            for (int yi = -1; yi <= 1; yi++)
+            for (int x = 0; x < Width; x++)
             {
-                if (xi == 0 && yi == 0) continue;
-
-                int nx = x + xi;
-                int ny = y + yi;
-
-                if (nx >= 0 && nx < Width && ny >= 0 && ny < Height && !visited[nx, ny])
+                for (int y = 0; y < Height; y++)
                 {
-                    visited[nx, ny] = true;
-                    queue.Enqueue(new Vector2Int(nx, ny));
+                    if (cells[x, y].isMine)
+                    {
+                        cells[x, y].isRevealed = true;
+                    }
                 }
             }
         }
-    }
 
-    private void CheckWinCondition()
-    {
-        int revealedCount = 0;
-        for (int x = 0; x < Width; x++)
+        private void PlaceMines(int avoidX, int avoidY)
         {
-            for (int y = 0; y < Height; y++)
+            var candidates = new List<Vector2Int>();
+
+            for (int x = 0; x < Width; x++)
             {
-                if (cells[x, y].isRevealed && !cells[x, y].isMine) revealedCount++;
+                for (int y = 0; y < Height; y++)
+                {
+                    bool inAvoidArea = (x >= avoidX - 1 && x <= avoidX + 1 &&
+                                        y >= avoidY - 1 && y <= avoidY + 1);
+                    if (!inAvoidArea)
+                    {
+                        candidates.Add(new Vector2Int(x, y));
+                    }
+                }
+            }
+
+            System.Random rng = new System.Random();
+            for (int i = candidates.Count - 1; i > 0; i--)
+            {
+                int j = rng.Next(i + 1);
+                Vector2Int temp = candidates[i];
+                candidates[i] = candidates[j];
+                candidates[j] = temp;
+            }
+
+            int minesToPlace = Math.Min(MineCount, candidates.Count);
+            for (int i = 0; i < minesToPlace; i++)
+            {
+                cells[candidates[i].x, candidates[i].y].isMine = true;
             }
         }
 
-        if (revealedCount == (Width * Height) - MineCount)
+        private void CalculateNeighbors()
         {
-            GameOver(true);
-        }
-    }
+            for (int x = 0; x < Width; x++)
+            {
+                for (int y = 0; y < Height; y++)
+                {
+                    if (cells[x, y].isMine) continue;
 
-    private void GameOver(bool win)
-    {
-        IsGameOver = true;
-        if (win)
-        {
-            IsWin = true;
-            OnWin?.Invoke();
+                    int mines = 0;
+                    for (int xi = -1; xi <= 1; xi++)
+                    {
+                        for (int yi = -1; yi <= 1; yi++)
+                        {
+                            if (xi == 0 && yi == 0) continue;
+
+                            int nx = x + xi;
+                            int ny = y + yi;
+
+                            if (nx >= 0 && nx < Width && ny >= 0 && ny < Height)
+                            {
+                                if (cells[nx, ny].isMine) mines++;
+                            }
+                        }
+                    }
+                    cells[x, y].adjacentMines = mines;
+                }
+            }
         }
-        else
+
+        private void AddNeighborsToQueue(int x, int y, Queue<Vector2Int> queue, bool[,] visited)
         {
-            IsWin = false;
-            OnLose?.Invoke();
+            for (int xi = -1; xi <= 1; xi++)
+            {
+                for (int yi = -1; yi <= 1; yi++)
+                {
+                    if (xi == 0 && yi == 0) continue;
+
+                    int nx = x + xi;
+                    int ny = y + yi;
+
+                    if (nx >= 0 && nx < Width && ny >= 0 && ny < Height && !visited[nx, ny])
+                    {
+                        visited[nx, ny] = true;
+                        queue.Enqueue(new Vector2Int(nx, ny));
+                    }
+                }
+            }
+        }
+
+        private void CheckWinCondition()
+        {
+            int revealedCount = 0;
+            for (int x = 0; x < Width; x++)
+            {
+                for (int y = 0; y < Height; y++)
+                {
+                    if (cells[x, y].isRevealed && !cells[x, y].isMine) revealedCount++;
+                }
+            }
+
+            if (revealedCount == (Width * Height) - MineCount)
+            {
+                GameOver(true);
+            }
+        }
+
+        private void GameOver(bool win)
+        {
+            IsGameOver = true;
+            if (win)
+            {
+                IsWin = true;
+                OnWin?.Invoke();
+            }
+            else
+            {
+                IsWin = false;
+                OnLose?.Invoke();
+            }
         }
     }
 }

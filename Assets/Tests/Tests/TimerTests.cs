@@ -2,6 +2,7 @@ using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
 using TMPro;
+using Buscaminas.Gameplay;
 
 public class TimerTests
 {

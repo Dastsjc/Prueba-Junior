@@ -1283,7 +1283,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   width: 10
   height: 5
-  mineCount: 1
+  mineCount: 7
   revealDelay: 0.05
   screenUsage: 0.8
   cellPrefab: {fileID: 8317659218775531599, guid: f3cc9b74ab5c41548a8c451d4620e4c9, type: 3}

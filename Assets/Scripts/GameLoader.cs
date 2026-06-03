@@ -2,42 +2,50 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-public class GameLoader : MonoBehaviour
+namespace Buscaminas.Gameplay
 {
-    public Animator transition;
-    public float transitionTime = 1f;
-    public GridManager gridManager;
-
-    void OnEnable()
+    /// <summary>
+    /// Handles level transitions. Subscribes to <see cref="GridManager.OnWin"/>
+    /// and loads the next scene after a transition animation.
+    /// </summary>
+    public class GameLoader : MonoBehaviour
     {
-        if (gridManager != null)
+        public Animator transition;
+        public float transitionTime = 1f;
+        public GridManager gridManager;
+
+        void OnEnable()
         {
-            gridManager.OnWin += HandleWin;
+            if (gridManager != null)
+            {
+                gridManager.OnWin += HandleWin;
+            }
         }
-    }
 
-    void OnDisable()
-    {
-        if (gridManager != null)
+        void OnDisable()
         {
-            gridManager.OnWin -= HandleWin;
+            if (gridManager != null)
+            {
+                gridManager.OnWin -= HandleWin;
+            }
         }
-    }
 
-    void HandleWin()
-    {
-        LoadNextLevel();
-    }
+        void HandleWin()
+        {
+            LoadNextLevel();
+        }
 
-    public void LoadNextLevel()
-    {
-        StartCoroutine(LoadLevel(SceneManager.GetActiveScene().buildIndex + 1));
-    }
+        /// <summary>Loads the next scene in the build order.</summary>
+        public void LoadNextLevel()
+        {
+            StartCoroutine(LoadLevel(SceneManager.GetActiveScene().buildIndex + 1));
+        }
 
-    IEnumerator LoadLevel(int levelIndex)
-    {
-        yield return new WaitForSeconds(transitionTime);
-        transition.SetTrigger("Start");
-        SceneManager.LoadScene(levelIndex);
+        IEnumerator LoadLevel(int levelIndex)
+        {
+            yield return new WaitForSeconds(transitionTime);
+            transition.SetTrigger("Start");
+            SceneManager.LoadScene(levelIndex);
+        }
     }
 }
