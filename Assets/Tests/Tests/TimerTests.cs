@@ -6,13 +6,13 @@ using TMPro;
 public class TimerTests
 {
     private GameObject gridGameObject;
-    private Grid grid;
+    private GridManager grid;
 
     [SetUp]
     public void SetUp()
     {
         gridGameObject = new GameObject("Grid");
-        grid = gridGameObject.AddComponent<Grid>();
+        grid = gridGameObject.AddComponent<GridManager>();
     }
 
     [TearDown]
@@ -31,12 +31,12 @@ public class TimerTests
         grid.timerText = timerText;
 
         // Set elapsedTime to 10 via reflection
-        FieldInfo elapsedTimeField = typeof(Grid).GetField("elapsedTime", BindingFlags.Instance | BindingFlags.NonPublic);
+        FieldInfo elapsedTimeField = typeof(GridManager).GetField("elapsedTime", BindingFlags.Instance | BindingFlags.NonPublic);
         elapsedTimeField.SetValue(grid, 10f);
 
         // Act
         // Invoke UpdateTimerUI via reflection
-        MethodInfo updateTimerUIMethod = typeof(Grid).GetMethod("UpdateTimerUI", BindingFlags.Instance | BindingFlags.NonPublic);
+        MethodInfo updateTimerUIMethod = typeof(GridManager).GetMethod("UpdateTimerUI", BindingFlags.Instance | BindingFlags.NonPublic);
         updateTimerUIMethod.Invoke(grid, null);
 
         // Assert

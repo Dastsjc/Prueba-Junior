@@ -3,7 +3,7 @@ using UnityEngine.UI;
 
 public class GameHud : MonoBehaviour
 {
-    [SerializeField] private Grid gridManager;
+    [SerializeField] private GridManager gridManager;
     [SerializeField] private Image faceImage;
     [SerializeField] private Sprite happyFace;
     [SerializeField] private Sprite dohFace;

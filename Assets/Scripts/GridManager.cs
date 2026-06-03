@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 
-public class Grid : MonoBehaviour
+public class GridManager : MonoBehaviour
 {
     public int width = 10;
     public int height = 10;

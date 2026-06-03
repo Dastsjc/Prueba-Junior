@@ -10,7 +10,7 @@ public class Cell : MonoBehaviour
     public int adjacentMines;
 
     private SpriteRenderer spriteRenderer;
-    private Grid grid;
+    private GridManager grid;
 
     [Header("Sprites")]
     public Sprite[] numberSprites; // 1 to 8
@@ -19,7 +19,7 @@ public class Cell : MonoBehaviour
     public Sprite mineSprite;
     public Sprite unrevealedSprite;
 
-    public void Setup(int x, int y, Grid grid)
+    public void Setup(int x, int y, GridManager grid)
     {
         this.x = x;
         this.y = y;

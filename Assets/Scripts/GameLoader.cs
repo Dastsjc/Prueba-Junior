@@ -6,7 +6,7 @@ public class GameLoader : MonoBehaviour
 {
     public Animator transition;
     public float transitionTime = 1f;
-    public Grid gridManager;
+    public GridManager gridManager;
 
     void OnEnable()
     {
