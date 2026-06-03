@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
-using JetBrains.Annotations;
 
 public class Grid : MonoBehaviour
 {
@@ -24,8 +23,9 @@ public class Grid : MonoBehaviour
     public Sprite mineSprite;
     public Sprite unrevealedSprite;
 
-    private bool gameOver = false;
-    private bool firstClick = true;
+    private Board board;
+    public Board Board => board;
+
     private float spacing = 1f;
     private float cellScale = 1.0f;
     
@@ -46,19 +46,19 @@ public class Grid : MonoBehaviour
     [Header("Flags")]
     public TextMeshProUGUI flagText;
     [HideInInspector]
-    public int flags;
+    public int flags { get { return board != null ? board.Flags : mineCount; } }
     
 
 
     private Vector3 gridCenter;
     private Vector2 lastScreenSize;
-
-    private bool isRegenerated = false;
     
 
     void Start()
     {
-        flags = mineCount;
+        board = new Board(width, height, mineCount);
+        board.OnWin += () => OnWin?.Invoke();
+        board.OnLose += () => { OnLose?.Invoke(); RevealAllMineViews(); };
         lastScreenSize = new Vector2(Screen.width, Screen.height);
         CalculateScaleAndSpacing();
         GenerateGrid();
@@ -106,14 +106,7 @@ public class Grid : MonoBehaviour
     public void RepositionGrid()
     {
         if (cells == null) return;
-        
         CalculateScaleAndSpacing();
-
-        float totalGridWidth = (width - 1) * spacing;
-        float totalGridHeight = (height - 1) * spacing;
-        
-        float startX = gridCenter.x - (totalGridWidth / 2f);
-        float startY = gridCenter.y - (totalGridHeight / 2f);
 
         for (int x = 0; x < width; x++)
         {
@@ -121,8 +114,7 @@ public class Grid : MonoBehaviour
             {
                 if (cells[x, y] != null)
                 {
-                    Vector3 position = new Vector3(startX + (x * spacing), startY + (y * spacing), 0);
-                    cells[x, y].transform.position = position;
+                    cells[x, y].transform.position = GetCellWorldPosition(x, y);
                     cells[x, y].transform.localScale = new Vector3(cellScale, cellScale, 1f);
                 }
             }
@@ -178,279 +170,111 @@ public class Grid : MonoBehaviour
         spacing = spriteSize * cellScale;
     }
 
-    void GenerateGrid()
+    Vector3 GetCellWorldPosition(int x, int y)
     {
-
-        cells = new Cell[width, height];
-
-        // Calculate offset to center the grid within gridCenter
         float totalGridWidth = (width - 1) * spacing;
         float totalGridHeight = (height - 1) * spacing;
-        
         float startX = gridCenter.x - (totalGridWidth / 2f);
         float startY = gridCenter.y - (totalGridHeight / 2f);
+        return new Vector3(startX + (x * spacing), startY + (y * spacing), 0);
+    }
 
+    void BuildCells()
+    {
+        cells = new Cell[width, height];
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
             {
-                Vector3 position = new Vector3(startX + (x * spacing), startY + (y * spacing), 0);
+                Vector3 position = GetCellWorldPosition(x, y);
                 Cell cell = Instantiate(cellPrefab, position, Quaternion.identity, transform);
-                
                 cell.transform.localScale = new Vector3(cellScale, cellScale, 1f);
-
                 cell.numberSprites = numberSprites;
                 cell.emptyRevealedSprite = emptyRevealedSprite;
                 cell.flagSprite = flagSprite;
                 cell.mineSprite = mineSprite;
                 cell.unrevealedSprite = unrevealedSprite;
-
                 cell.Setup(x, y, this);
                 cells[x, y] = cell;
             }
         }
+    }
+
+    void GenerateGrid()
+    {
+        BuildCells();
     }
 
     public void RegenerateGrid()
     {
-        gameOver = false;
-        isRegenerated = true;
-        flags = mineCount;
+        board = new Board(width, height, mineCount);
+        board.OnWin += () => OnWin?.Invoke();
+        board.OnLose += () => { OnLose?.Invoke(); RevealAllMineViews(); };
         OnRestart?.Invoke();
         UpdateFlagUI();
         StartTimer();
-        if (this.gameObject.transform.GetChild(0))
-        {
-            int childs = transform.childCount;
-            for (int i = childs - 1; i >= 0; i--)
-            {
-                GameObject.Destroy(transform.GetChild(i).gameObject);
-            }
-        }
-        cells = new Cell[width, height];
 
-        // Calculate offset to center the grid within gridCenter
-        float totalGridWidth = (width - 1) * spacing;
-        float totalGridHeight = (height - 1) * spacing;
+        for (int i = transform.childCount - 1; i >= 0; i--)
+            Destroy(transform.GetChild(i).gameObject);
 
-        float startX = gridCenter.x - (totalGridWidth / 2f);
-        float startY = gridCenter.y - (totalGridHeight / 2f);
-
-        for (int x = 0; x < width; x++)
-        {
-            for (int y = 0; y < height; y++)
-            {
-                Vector3 position = new Vector3(startX + (x * spacing), startY + (y * spacing), 0);
-                Cell cell = Instantiate(cellPrefab, position, Quaternion.identity, transform);
-
-                cell.transform.localScale = new Vector3(cellScale, cellScale, 1f);
-
-                cell.numberSprites = numberSprites;
-                cell.emptyRevealedSprite = emptyRevealedSprite;
-                cell.flagSprite = flagSprite;
-                cell.mineSprite = mineSprite;
-                cell.unrevealedSprite = unrevealedSprite;
-
-                cell.Setup(x, y, this);
-                cells[x, y] = cell;
-            }
-        }
-
-    }
-
-    void PlaceMines(int avoidX, int avoidY)
-    {
-        List<Vector2Int> candidates = new List<Vector2Int>();
-
-        for (int x = 0; x < width; x++)
-        {
-            for (int y = 0; y < height; y++)
-            {
-                bool inAvoidArea = (x >= avoidX - 1 && x <= avoidX + 1 && y >= avoidY - 1 && y <= avoidY + 1);
-                if (!inAvoidArea)
-                {
-                    candidates.Add(new Vector2Int(x, y));
-                }
-            }
-        }
-
-        // Fisher-Yates shuffle
-        System.Random rng = new System.Random();
-        for (int i = candidates.Count - 1; i > 0; i--)
-        {
-            int j = rng.Next(i + 1);
-            Vector2Int temp = candidates[i];
-            candidates[i] = candidates[j];
-            candidates[j] = temp;
-        }
-
-        int minesToPlace = Mathf.Min(mineCount, candidates.Count);
-        for (int i = 0; i < minesToPlace; i++)
-        {
-            cells[candidates[i].x, candidates[i].y].isMine = true;
-        }
-    }
-
-    void CalculateNeighbors()
-    {
-        for (int x = 0; x < width; x++)
-        {
-            for (int y = 0; y < height; y++)
-            {
-                if (cells[x, y].isMine) continue;
-
-                int mines = 0;
-                for (int xi = -1; xi <= 1; xi++)
-                {
-                    for (int yi = -1; yi <= 1; yi++)
-                    {
-                        if (xi == 0 && yi == 0) continue;
-
-                        int nx = x + xi;
-                        int ny = y + yi;
-
-                        if (nx >= 0 && nx < width && ny >= 0 && ny < height)
-                        {
-                            if (cells[nx, ny].isMine) mines++;
-                        }
-                    }
-                }
-                cells[x, y].adjacentMines = mines;
-            }
-        }
+        BuildCells();
     }
 
     public void RevealCell(int x, int y)
     {
-        if (gameOver || cells[x, y].isRevealed || cells[x, y].isFlagged) return;
+        if (board.IsGameOver || board.IsRevealed(x, y) || board.IsFlagged(x, y)) return;
 
-        if (firstClick || isRegenerated)
+        var levels = board.Reveal(x, y);
+        if (levels == null)
         {
-            firstClick = false;
-            isRegenerated = false;
-            PlaceMines(x, y);
-            CalculateNeighbors();
-        }
-
-        if (cells[x, y].isMine)
-        {
-            cells[x, y].isRevealed = true;
-            cells[x, y].UpdateVisuals();
-            GameOver(false);
+            if (board.IsGameOver)
+            {
+                cells[x, y].isRevealed = true;
+                cells[x, y].UpdateVisuals();
+                isTimerActive = false;
+                RevealAllMineViews();
+            }
             return;
         }
 
-        StartCoroutine(RevealRoutine(x, y));
+        StartCoroutine(RevealRoutine(levels));
     }
 
-    private IEnumerator RevealRoutine(int startX, int startY)
+    private IEnumerator RevealRoutine(List<List<Vector2Int>> levels)
     {
-        Queue<Vector2Int> nodes = new Queue<Vector2Int>();
-        nodes.Enqueue(new Vector2Int(startX, startY));
-
-        while (nodes.Count > 0)
+        foreach (var level in levels)
         {
-            int levelSize = nodes.Count;
-            for (int i = 0; i < levelSize; i++)
+            foreach (var pos in level)
             {
-                Vector2Int current = nodes.Dequeue();
-                int x = current.x;
-                int y = current.y;
-
-                if (cells[x, y].isRevealed || cells[x, y].isFlagged) continue;
-
-                cells[x, y].isRevealed = true;
-                cells[x, y].UpdateVisuals();
-
-                if (cells[x, y].adjacentMines == 0)
-                {
-                    AddNeighborsToQueue(x, y, nodes);
-                }
+                cells[pos.x, pos.y].isRevealed = true;
+                cells[pos.x, pos.y].adjacentMines = board.AdjacentMines(pos.x, pos.y);
+                cells[pos.x, pos.y].isMine = board.IsMine(pos.x, pos.y);
+                cells[pos.x, pos.y].UpdateVisuals();
             }
             yield return new WaitForSeconds(revealDelay);
-            CheckWinCondition();
-        }
-    }
-
-    void AddNeighborsToQueue(int x, int y, Queue<Vector2Int> queue)
-    {
-        for (int xi = -1; xi <= 1; xi++)
-        {
-            for (int yi = -1; yi <= 1; yi++)
-            {
-                if (xi == 0 && yi == 0) continue;
-
-                int nx = x + xi;
-                int ny = y + yi;
-
-                if (nx >= 0 && nx < width && ny >= 0 && ny < height && !cells[nx, ny].isRevealed)
-                {
-                    queue.Enqueue(new Vector2Int(nx, ny));
-                }
-            }
         }
     }
 
     public void ToggleFlag(int x, int y)
     {
-        if (gameOver || cells[x, y].isRevealed) return;
+        if (board.IsGameOver || board.IsRevealed(x, y)) return;
 
-        if (cells[x, y].isFlagged)
-        {
-            cells[x, y].isFlagged = false;
-            flags++;
-            cells[x, y].UpdateVisuals();
-        }
-        else if (flags > 0)
-        {
-            cells[x, y].isFlagged = true;
-            flags--;
-            cells[x, y].UpdateVisuals();
-        }
-
+        board.ToggleFlag(x, y);
+        cells[x, y].isFlagged = board.IsFlagged(x, y);
+        cells[x, y].UpdateVisuals();
         UpdateFlagUI();
     }
 
-    void CheckWinCondition()
+    void RevealAllMineViews()
     {
-        int revealedCount = 0;
+        if (cells == null) return;
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
             {
-                if (cells[x, y].isRevealed && !cells[x, y].isMine) revealedCount++;
-            }
-        }
-
-        if (revealedCount == (width * height) - mineCount)
-        {
-            GameOver(true);
-        }
-    }
-
-    void GameOver(bool win)
-    {
-        gameOver = true;
-        isTimerActive = false;
-        if (win)
-        {
-            OnWin?.Invoke();
-        }
-        else
-        {
-            OnLose?.Invoke();
-            RevealAllMines();
-        }
-    }
-
-    void RevealAllMines()
-    {
-        for (int x = 0; x < width; x++)
-        {
-            for (int y = 0; y < height; y++)
-            {
-                if (cells[x, y].isMine)
+                if (board.IsMine(x, y))
                 {
+                    cells[x, y].isMine = true;
                     cells[x, y].isRevealed = true;
                     cells[x, y].UpdateVisuals();
                 }

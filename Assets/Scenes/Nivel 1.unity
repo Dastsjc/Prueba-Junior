@@ -947,7 +947,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   transition: {fileID: 2115709880}
-  transitionTime: 3
+  transitionTime: 1.5
   gridManager: {fileID: 2018837874}
 --- !u!1 &1112086187
 GameObject:
@@ -1283,7 +1283,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   width: 10
   height: 5
-  mineCount: 7
+  mineCount: 1
   revealDelay: 0.05
   screenUsage: 0.8
   cellPrefab: {fileID: 8317659218775531599, guid: f3cc9b74ab5c41548a8c451d4620e4c9, type: 3}
@@ -1304,7 +1304,6 @@ MonoBehaviour:
   gameLine: {fileID: 974516374}
   timerText: {fileID: 2131262535}
   flagText: {fileID: 466561081}
-  flags: 0
 --- !u!4 &2018837875
 Transform:
   m_ObjectHideFlags: 0
