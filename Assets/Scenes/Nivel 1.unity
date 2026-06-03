@@ -1300,7 +1300,6 @@ MonoBehaviour:
   flagSprite: {fileID: -689998892, guid: 68ef8e62cb529dc48b4676c72d87e6c8, type: 3}
   mineSprite: {fileID: 597277563, guid: 68ef8e62cb529dc48b4676c72d87e6c8, type: 3}
   unrevealedSprite: {fileID: -1096927423, guid: 68ef8e62cb529dc48b4676c72d87e6c8, type: 3}
-  winState: 0
   gameArea: {fileID: 909330389}
   gameLine: {fileID: 974516374}
   timerText: {fileID: 2131262535}
@@ -1564,6 +1563,7 @@ GameObject:
   - component: {fileID: 2142513358}
   - component: {fileID: 2142513357}
   - component: {fileID: 2142513356}
+  - component: {fileID: 2142513359}
   m_Layer: 5
   m_Name: Happy Face
   m_TagString: Untagged
@@ -1684,6 +1684,22 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2142513354}
   m_CullTransparentMesh: 1
+--- !u!114 &2142513359
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2142513354}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ebed706a6f9f0ea41ad19f68fd07a77a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  gridManager: {fileID: 2018837874}
+  faceImage: {fileID: 2142513357}
+  happyFace: {fileID: 21300000, guid: 8e29897670cd1324e85839b75240a4fd, type: 3}
+  dohFace: {fileID: 21300000, guid: c7469cf19db9e8e4da5ed9fbb4d876e1, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

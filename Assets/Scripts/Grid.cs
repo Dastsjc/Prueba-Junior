@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -27,8 +28,10 @@ public class Grid : MonoBehaviour
     private bool firstClick = true;
     private float spacing = 1f;
     private float cellScale = 1.0f;
-    [HideInInspector]
-    public bool winState;
+    
+    public event Action OnWin;
+    public event Action OnLose;
+    public event Action OnRestart;
 
 
     [Header("UI Constraints")]
@@ -56,7 +59,6 @@ public class Grid : MonoBehaviour
     void Start()
     {
         flags = mineCount;
-        winState = false;
         lastScreenSize = new Vector2(Screen.width, Screen.height);
         CalculateScaleAndSpacing();
         GenerateGrid();
@@ -214,6 +216,7 @@ public class Grid : MonoBehaviour
         gameOver = false;
         isRegenerated = true;
         flags = mineCount;
+        OnRestart?.Invoke();
         UpdateFlagUI();
         StartTimer();
         if (this.gameObject.transform.GetChild(0))
@@ -257,24 +260,34 @@ public class Grid : MonoBehaviour
 
     void PlaceMines(int avoidX, int avoidY)
     {
-        int count = 0;
-        int maxAttempts = 1000;
-        int attempts = 0;
+        List<Vector2Int> candidates = new List<Vector2Int>();
 
-        while (count < mineCount && attempts < maxAttempts)
+        for (int x = 0; x < width; x++)
         {
-            attempts++;
-            int x = Random.Range(0, width);
-            int y = Random.Range(0, height);
-
-            // Avoid the 3x3 area around the first click to ensure a "0" start
-            bool inAvoidArea = (x >= avoidX - 1 && x <= avoidX + 1 && y >= avoidY - 1 && y <= avoidY + 1);
-
-            if (!cells[x, y].isMine && !inAvoidArea)
+            for (int y = 0; y < height; y++)
             {
-                cells[x, y].isMine = true;
-                count++;
+                bool inAvoidArea = (x >= avoidX - 1 && x <= avoidX + 1 && y >= avoidY - 1 && y <= avoidY + 1);
+                if (!inAvoidArea)
+                {
+                    candidates.Add(new Vector2Int(x, y));
+                }
             }
+        }
+
+        // Fisher-Yates shuffle
+        System.Random rng = new System.Random();
+        for (int i = candidates.Count - 1; i > 0; i--)
+        {
+            int j = rng.Next(i + 1);
+            Vector2Int temp = candidates[i];
+            candidates[i] = candidates[j];
+            candidates[j] = temp;
+        }
+
+        int minesToPlace = Mathf.Min(mineCount, candidates.Count);
+        for (int i = 0; i < minesToPlace; i++)
+        {
+            cells[candidates[i].x, candidates[i].y].isMine = true;
         }
     }
 
@@ -421,11 +434,11 @@ public class Grid : MonoBehaviour
         isTimerActive = false;
         if (win)
         {
-            winState = true;
+            OnWin?.Invoke();
         }
         else
         {
-            Debug.Log("Game Over!");
+            OnLose?.Invoke();
             RevealAllMines();
         }
     }

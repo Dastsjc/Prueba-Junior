@@ -149,4 +149,53 @@ public class GridTests
         Assert.AreEqual(0, grid.flags, "Flag count should remain 0 after trying to flag more than mineCount");
         Assert.IsFalse(cells[0, 1].isFlagged, "Cell (0,1) should not be flagged when no flags are left");
     }
+
+    [Test]
+    public void PlaceMines_AlwaysPlacesExactMineCount()
+    {
+        // Arrange
+        grid.width = 10;
+        grid.height = 10;
+        grid.mineCount = 15;
+
+        MethodInfo calcMethod = typeof(Grid).GetMethod("CalculateScaleAndSpacing", BindingFlags.Instance | BindingFlags.NonPublic);
+        calcMethod.Invoke(grid, null);
+
+        MethodInfo generateGridMethod = typeof(Grid).GetMethod("GenerateGrid", BindingFlags.Instance | BindingFlags.NonPublic);
+        generateGridMethod.Invoke(grid, null);
+
+        // Act — invoke PlaceMines with first click at center
+        MethodInfo placeMinesMethod = typeof(Grid).GetMethod("PlaceMines", BindingFlags.Instance | BindingFlags.NonPublic);
+        placeMinesMethod.Invoke(grid, new object[] { 5, 5 });
+
+        // Assert — count mines
+        FieldInfo cellsField = typeof(Grid).GetField("cells", BindingFlags.Instance | BindingFlags.NonPublic);
+        Cell[,] cells = (Cell[,])cellsField.GetValue(grid);
+
+        int mineCount = 0;
+        for (int x = 0; x < 10; x++)
+        {
+            for (int y = 0; y < 10; y++)
+            {
+                if (cells[x, y].isMine) mineCount++;
+            }
+        }
+
+        Assert.AreEqual(15, mineCount, "Exactly 15 mines should be placed");
+    }
+
+    [Test]
+    public void GameOver_Lose_FiresOnLoseEvent()
+    {
+        // Arrange
+        bool onLoseFired = false;
+        grid.OnLose += () => onLoseFired = true;
+
+        // Act — invoke GameOver(false) via reflection
+        MethodInfo gameOverMethod = typeof(Grid).GetMethod("GameOver", BindingFlags.Instance | BindingFlags.NonPublic);
+        gameOverMethod.Invoke(grid, new object[] { false });
+
+        // Assert
+        Assert.IsTrue(onLoseFired, "OnLose event should fire when the player loses");
+    }
 }
