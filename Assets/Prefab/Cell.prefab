@@ -98,12 +98,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2a6a6c819c0d0a34ba553dd6ce193947, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  x: 50
-  y: 50
-  isMine: 0
-  isRevealed: 0
-  isFlagged: 0
-  adjacentMines: 0
   numberSprites:
   - {fileID: 317337212, guid: 68ef8e62cb529dc48b4676c72d87e6c8, type: 3}
   - {fileID: -251457387, guid: 68ef8e62cb529dc48b4676c72d87e6c8, type: 3}
@@ -113,10 +107,11 @@ MonoBehaviour:
   - {fileID: -1217833010, guid: 68ef8e62cb529dc48b4676c72d87e6c8, type: 3}
   - {fileID: 1449690575, guid: 68ef8e62cb529dc48b4676c72d87e6c8, type: 3}
   - {fileID: 419532042, guid: 68ef8e62cb529dc48b4676c72d87e6c8, type: 3}
-  emptyRevealedSprite: {fileID: 0}
+  emptyRevealedSprite: {fileID: 540453015, guid: 68ef8e62cb529dc48b4676c72d87e6c8, type: 3}
   flagSprite: {fileID: -689998892, guid: 68ef8e62cb529dc48b4676c72d87e6c8, type: 3}
   mineSprite: {fileID: 597277563, guid: 68ef8e62cb529dc48b4676c72d87e6c8, type: 3}
   unrevealedSprite: {fileID: -1096927423, guid: 68ef8e62cb529dc48b4676c72d87e6c8, type: 3}
+  longPressDuration: 0.5
 --- !u!61 &7904338923044496790
 BoxCollider2D:
   m_ObjectHideFlags: 0
