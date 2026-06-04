@@ -1,29 +1,20 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace Buscaminas.Gameplay
 {
-    /// <summary>
-    /// View component for a single Minesweeper cell. Renders the correct sprite
-    /// based on its state and delegates input to <see cref="GridManager"/>.
-    /// </summary>
+
     public class Cell : MonoBehaviour
     {
-        /// <summary>Grid x-coordinate of this cell.</summary>
         public int X { get; private set; }
 
-        /// <summary>Grid y-coordinate of this cell.</summary>
         public int Y { get; private set; }
 
-        /// <summary>Whether this cell contains a mine.</summary>
         public bool IsMine { get; internal set; }
 
-        /// <summary>Whether this cell has been revealed.</summary>
         public bool IsRevealed { get; internal set; }
 
-        /// <summary>Whether this cell is flagged by the player.</summary>
         public bool IsFlagged { get; internal set; }
 
-        /// <summary>Number of mines in adjacent cells.</summary>
         public int AdjacentMines { get; internal set; }
 
         private SpriteRenderer spriteRenderer;
@@ -36,10 +27,6 @@ namespace Buscaminas.Gameplay
         [SerializeField] private Sprite mineSprite;
         [SerializeField] private Sprite unrevealedSprite;
 
-        /// <summary>
-        /// Initializes the cell with its grid position and parent manager.
-        /// Called by <see cref="GridManager.BuildCells"/>.
-        /// </summary>
         public void Setup(int x, int y, GridManager grid)
         {
             X = x;
@@ -49,10 +36,6 @@ namespace Buscaminas.Gameplay
             UpdateVisuals();
         }
 
-        /// <summary>
-        /// Updates the sprite renderer to reflect the current cell state
-        /// (unrevealed, flagged, revealed with number, revealed mine, or empty).
-        /// </summary>
         public void UpdateVisuals()
         {
             if (IsRevealed)

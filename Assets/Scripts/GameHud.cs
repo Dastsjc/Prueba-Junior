@@ -1,12 +1,9 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 
 namespace Buscaminas.Gameplay
 {
-    /// <summary>
-    /// Manages the face icon in the HUD. Swaps between the happy and doh face
-    /// sprites based on game win/lose/restart events from <see cref="GridManager"/>.
-    /// </summary>
+
     public class GameHud : MonoBehaviour
     {
         [SerializeField] private GridManager gridManager;

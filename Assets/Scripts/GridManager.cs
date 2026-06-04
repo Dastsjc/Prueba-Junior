@@ -6,10 +6,6 @@ using TMPro;
 
 namespace Buscaminas.Gameplay
 {
-    /// <summary>
-    /// MonoBehaviour view/controller for the Minesweeper grid. Handles cell
-    /// instantiation, layout, animation, UI, and delegates game logic to <see cref="Board"/>.
-    /// </summary>
     public class GridManager : MonoBehaviour
     {
         [SerializeField] private int width = 10;

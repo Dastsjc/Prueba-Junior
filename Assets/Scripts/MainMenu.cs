@@ -1,13 +1,9 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace Buscaminas.Gameplay
 {
-    /// <summary>
-    /// Controls the main menu with three canvases: buttons, instructions, and options.
-    /// Persists settings via <see cref="PlayerPrefs"/>.
-    /// </summary>
     public class MainMenu : MonoBehaviour
     {
         [Header("Canvases")]
@@ -36,6 +32,7 @@ namespace Buscaminas.Gameplay
 
         void Awake()
         {
+            Screen.SetResolution(1920, 1080, FullScreenMode.FullScreenWindow);
             LoadSettings();
             ShowButtons();
         }

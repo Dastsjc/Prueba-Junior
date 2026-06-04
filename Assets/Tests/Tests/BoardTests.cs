@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
 using Buscaminas.Gameplay;
@@ -9,7 +9,7 @@ public class BoardTests
     public void Board_PlaceMines_PlacesExactCount()
     {
         var board = new Board(10, 10, 15);
-        board.Reveal(5, 5); // triggers mine placement
+        board.Reveal(5, 5);
 
         int mineCount = 0;
         for (int x = 0; x < 10; x++)
@@ -23,7 +23,7 @@ public class BoardTests
     public void Board_PlaceMines_NeverPlacesInSafeArea()
     {
         var board = new Board(10, 10, 50);
-        board.Reveal(5, 5); // safe area is 3x3 around (5,5)
+        board.Reveal(5, 5);
 
         for (int x = 4; x <= 6; x++)
             for (int y = 4; y <= 6; y++)
@@ -33,11 +33,9 @@ public class BoardTests
     [Test]
     public void Board_Reveal_MineEndsGame()
     {
-        var board = new Board(5, 5, 20); // high density to guarantee mine hit
-        // Find a cell that will be a mine after placement
-        board.Reveal(2, 2); // place mines avoiding (2,2) safe area
+        var board = new Board(5, 5, 20);
+        board.Reveal(2, 2);
 
-        // Find a mine cell
         int mineX = -1, mineY = -1;
         for (int x = 0; x < 5; x++)
         {
@@ -55,7 +53,6 @@ public class BoardTests
 
         Assert.IsTrue(mineX >= 0, "Should have at least one mine");
 
-        // Reveal the mine
         board.Reveal(mineX, mineY);
 
         Assert.IsTrue(board.IsGameOver, "Game should be over after hitting a mine");
@@ -65,14 +62,12 @@ public class BoardTests
     [Test]
     public void Board_Reveal_FloodFillExpandsThroughZeros()
     {
-        // 3x3 grid with 0 mines: all cells are zeros, so revealing one should reveal all
         var board = new Board(3, 3, 0);
         var levels = board.Reveal(1, 1);
 
         Assert.IsNotNull(levels, "Reveal should return levels");
         Assert.IsTrue(levels.Count > 0, "Should have at least one BFS level");
 
-        // All 9 cells should be revealed
         int revealedCount = 0;
         for (int x = 0; x < 3; x++)
             for (int y = 0; y < 3; y++)
@@ -84,13 +79,8 @@ public class BoardTests
     [Test]
     public void Board_Reveal_NonZeroDoesNotExpand()
     {
-        // First reveal places mines. Then find an unrevealed cell with adjacent mines.
-        // Use enough mines so two mines are likely adjacent, giving their shared
-        // neighbor adjacentMines >= 2.
         var board = new Board(5, 5, 10);
-        board.Reveal(0, 0); // places mines, flood-fills from (0,0)
-
-        // Find an unrevealed non-mine cell with adjacentMines >= 1
+        board.Reveal(0, 0);
         int testX = -1, testY = -1;
         for (int x = 0; x < 5 && testX < 0; x++)
             for (int y = 0; y < 5 && testX < 0; y++)
@@ -110,20 +100,17 @@ public class BoardTests
     [Test]
     public void Board_ToggleFlag_TogglesAndLimitsFlags()
     {
-        // 5x5 with 20 mines: center safe, flood-fill blocked by mines
         var board = new Board(5, 5, 20);
-        board.Reveal(2, 2); // only reveals center (has adjacent mines)
+        board.Reveal(2, 2); 
 
         Assert.AreEqual(20, board.Flags, "Initial flags should equal mineCount");
 
-        // Find an unrevealed, non-mine cell to flag
         int flagX = -1, flagY = -1;
         for (int x = 0; x < 5 && flagX < 0; x++)
             for (int y = 0; y < 5 && flagX < 0; y++)
                 if (!board.IsRevealed(x, y) && !board.IsMine(x, y))
                 { flagX = x; flagY = y; }
 
-        // If all non-mine cells are revealed, use a mine cell for flag testing
         if (flagX < 0)
         {
             for (int x = 0; x < 5 && flagX < 0; x++)
@@ -159,11 +146,9 @@ public class BoardTests
     [Test]
     public void Board_CannotRevealFlaggedCell()
     {
-        // 5x5 with 20 mines: center safe, flood-fill blocked
         var board = new Board(5, 5, 20);
-        board.Reveal(2, 2); // only reveals center
+        board.Reveal(2, 2);
 
-        // Find an unrevealed cell
         int testX = -1, testY = -1;
         for (int x = 0; x < 5 && testX < 0; x++)
             for (int y = 0; y < 5 && testX < 0; y++)
@@ -180,24 +165,12 @@ public class BoardTests
     [Test]
     public void Board_WinCondition_DetectedWhenAllNonMinesRevealed()
     {
-        // 3x3 with 1 mine at (0,0). Reveal (0,1) → flood-fills all 8 non-mine cells → win.
-        // Safe area around (0,1): x∈[0,1], y∈[0,2] = (0,0),(0,1),(0,2),(1,0),(1,1),(1,2)
-        // Candidates: (2,0),(2,1),(2,2) = 3 cells. 1 mine placed at one of them.
-
-        // To guarantee mine at a specific position, use a larger grid.
-        // 5x5 with 1 mine, Reveal(4,4): safe area = (3,3)-(4,4) = 4 cells.
-        // Mine somewhere in the other 21 cells. (4,4) has 0 adjacent mines → flood-fills.
-
-        // But flood-fill extent depends on mine position. Use a simpler approach:
-        // 3x3 with 0 mines → Reveal reveals all 9 cells. 0 non-mine cells → all revealed.
-        // Win condition: revealedCount == 9 - 0 = 9 → fires immediately.
-
         var board = new Board(3, 3, 0);
 
         bool onWinFired = false;
         board.OnWin += () => onWinFired = true;
 
-        board.Reveal(1, 1); // flood-fills all 9 cells, all are non-mine
+        board.Reveal(1, 1);
 
         Assert.IsTrue(onWinFired, "OnWin should fire when all non-mine cells are revealed");
         Assert.IsTrue(board.IsWin, "IsWin should be true");
@@ -220,8 +193,8 @@ public class BoardTests
     [Test]
     public void Board_Reveal_MineFiresOnLoseEvent()
     {
-        var board = new Board(5, 5, 20); // high density
-        board.Reveal(2, 2); // place mines
+        var board = new Board(5, 5, 20);
+        board.Reveal(2, 2);
 
         // Find a mine
         int mineX = -1, mineY = -1;
@@ -250,20 +223,12 @@ public class BoardTests
     [Test]
     public void Board_AdjacentMines_CountedCorrectly()
     {
-        // Place a known mine configuration manually
-        // 3x3 with 1 mine, reveal center to trigger placement
+
         var board = new Board(3, 3, 1);
-        board.Reveal(1, 1); // safe area is (0,0) to (2,2) - entire grid is safe for 0 mines? No, 1 mine
-        // The mine will be placed somewhere outside the 3x3 safe area around (1,1)
-        // But the grid IS 3x3, so safe area covers the entire grid!
-        // With 1 mine and safe area covering all 9 cells, no mine can be placed
-        // Let's use a bigger grid
+        board.Reveal(1, 1);
 
         var board2 = new Board(5, 5, 1);
-        board2.Reveal(2, 2); // safe area is (1,1) to (3,3)
-
-        // The mine is somewhere outside the safe area
-        // Find the mine
+        board2.Reveal(2, 2);
         int mineX = -1, mineY = -1;
         for (int x = 0; x < 5; x++)
         {
@@ -281,8 +246,6 @@ public class BoardTests
 
         Assert.IsTrue(mineX >= 0, "Should have one mine");
 
-        // Count expected adjacent mines for a cell next to the mine
-        // Reveal the mine's neighbor to check adjacentMines
         int testX = Mathf.Clamp(mineX + 1, 0, 4);
         int testY = mineY;
         if (board2.IsMine(testX, testY))

@@ -1,37 +1,24 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 
 namespace Buscaminas.Gameplay
 {
-    /// <summary>
-    /// Pure C# class that holds all Minesweeper game logic and state.
-    /// No MonoBehaviour dependency — fully unit-testable without GameObjects.
-    /// </summary>
     public class Board
     {
-        /// <summary>Grid width in cells.</summary>
         public int Width { get; }
-
-        /// <summary>Grid height in cells.</summary>
         public int Height { get; }
 
-        /// <summary>Total number of mines on the board.</summary>
         public int MineCount { get; }
 
-        /// <summary>Number of flags remaining (starts at MineCount).</summary>
         public int Flags { get; private set; }
 
-        /// <summary>Whether the game has ended (win or lose).</summary>
         public bool IsGameOver { get; private set; }
 
-        /// <summary>Whether the player won. Only meaningful when <see cref="IsGameOver"/> is true.</summary>
         public bool IsWin { get; private set; }
 
-        /// <summary>Fired once when the player wins.</summary>
         public event Action OnWin;
 
-        /// <summary>Fired once when the player hits a mine.</summary>
         public event Action OnLose;
 
         private struct CellData
@@ -44,11 +31,6 @@ namespace Buscaminas.Gameplay
 
         private CellData[,] cells;
         private bool minesPlaced;
-
-        /// <summary>
-        /// Creates a new board with the given dimensions. Mines are placed lazily
-        /// on the first <see cref="Reveal"/> call (first-click safety).
-        /// </summary>
         public Board(int width, int height, int mineCount)
         {
             Width = width;
@@ -58,24 +40,19 @@ namespace Buscaminas.Gameplay
             cells = new CellData[width, height];
         }
 
-        /// <summary>Returns true if the cell at (x, y) contains a mine.</summary>
+
         public bool IsMine(int x, int y) => cells[x, y].isMine;
 
-        /// <summary>Returns true if the cell at (x, y) has been revealed.</summary>
+
         public bool IsRevealed(int x, int y) => cells[x, y].isRevealed;
 
-        /// <summary>Returns true if the cell at (x, y) is flagged.</summary>
+
         public bool IsFlagged(int x, int y) => cells[x, y].isFlagged;
 
-        /// <summary>Returns the number of adjacent mines for the cell at (x, y).</summary>
+
         public int AdjacentMines(int x, int y) => cells[x, y].adjacentMines;
 
-        /// <summary>
-        /// Reveals the cell at (x, y). On the first call, mines are placed
-        /// avoiding a 3×3 safe area around (x, y).
-        /// Returns BFS levels for animated reveal, or null if the cell was a mine
-        /// (game over) or already revealed/flagged.
-        /// </summary>
+
         public List<List<Vector2Int>> Reveal(int x, int y)
         {
             if (IsGameOver || cells[x, y].isRevealed || cells[x, y].isFlagged)
@@ -132,10 +109,6 @@ namespace Buscaminas.Gameplay
             return levels;
         }
 
-        /// <summary>
-        /// Toggles the flag on the cell at (x, y). Does nothing if the game is over
-        /// or the cell is already revealed. Flags are limited to <see cref="MineCount"/>.
-        /// </summary>
         public void ToggleFlag(int x, int y)
         {
             if (IsGameOver || cells[x, y].isRevealed) return;
@@ -152,9 +125,6 @@ namespace Buscaminas.Gameplay
             }
         }
 
-        /// <summary>
-        /// Reveals all mine cells. Called by the view layer when the player loses.
-        /// </summary>
         public void RevealAllMines()
         {
             for (int x = 0; x < Width; x++)
