@@ -1287,6 +1287,7 @@ MonoBehaviour:
   revealDelay: 0.05
   screenUsage: 0.8
   cellPrefab: {fileID: 8317659218775531599, guid: f3cc9b74ab5c41548a8c451d4620e4c9, type: 3}
+  explosionPrefab: {fileID: 4894503655372096046, guid: deca0e406faad7c4a968efbbdb75a7a6, type: 3}
   numberSprites:
   - {fileID: 317337212, guid: 68ef8e62cb529dc48b4676c72d87e6c8, type: 3}
   - {fileID: -251457387, guid: 68ef8e62cb529dc48b4676c72d87e6c8, type: 3}

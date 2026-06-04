@@ -20,6 +20,7 @@ namespace Buscaminas.Gameplay
         [SerializeField] private float screenUsage = 0.8f;
 
         [SerializeField] private Cell cellPrefab;
+        [SerializeField] private GameObject explosionPrefab;
         private Cell[,] cells;
 
         [Header("Sprites")]
@@ -251,6 +252,10 @@ namespace Buscaminas.Gameplay
                     cells[x, y].IsRevealed = true;
                     cells[x, y].UpdateVisuals();
                     isTimerActive = false;
+
+                    if (explosionPrefab != null)
+                        Instantiate(explosionPrefab, cells[x, y].transform.position, Quaternion.identity);
+
                     RevealAllMineViews();
                 }
                 return;
