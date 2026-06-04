@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -23,6 +23,10 @@ namespace Buscaminas.Gameplay
         [SerializeField] private GameObject explosionPrefab;
         private Cell[,] cells;
 
+        [Header("Audio")]
+        [SerializeField] private AudioSource audioSource;
+        [SerializeField] private AudioClip explosionSound;
+
         [Header("Sprites")]
         [SerializeField] private Sprite[] numberSprites;
         [SerializeField] private Sprite emptyRevealedSprite;
@@ -32,28 +36,20 @@ namespace Buscaminas.Gameplay
 
         private Board board;
 
-        /// <summary>The underlying <see cref="Board"/> holding game state.</summary>
         public Board Board => board;
 
-        /// <summary>Grid width in cells.</summary>
         public int Width => width;
-
-        /// <summary>Grid height in cells.</summary>
+        
         public int Height => height;
 
-        /// <summary>Total mine count for this grid.</summary>
         public int MineCount => mineCount;
 
         private float spacing = 1f;
         private float cellScale = 1.0f;
 
-        /// <summary>Fired when the player wins.</summary>
-        public event Action OnWin;
-
-        /// <summary>Fired when the player hits a mine.</summary>
+        
+        public event Action OnWin;   
         public event Action OnLose;
-
-        /// <summary>Fired when the grid is regenerated (restart).</summary>
         public event Action OnRestart;
 
         [Header("UI Constraints")]
@@ -68,7 +64,6 @@ namespace Buscaminas.Gameplay
         [Header("Flags")]
         [SerializeField] private TextMeshProUGUI flagText;
 
-        /// <summary>Number of flags remaining.</summary>
         public int Flags => board != null ? board.Flags : mineCount;
 
         private Vector3 gridCenter;
@@ -76,6 +71,12 @@ namespace Buscaminas.Gameplay
 
         void Start()
         {
+            if (audioSource == null)
+                audioSource = GetComponent<AudioSource>();
+            if (audioSource == null)
+                audioSource = gameObject.AddComponent<AudioSource>();
+            audioSource.playOnAwake = false;
+
             board = new Board(width, height, mineCount);
             board.OnWin += () => OnWin?.Invoke();
             board.OnLose += () => { OnLose?.Invoke(); RevealAllMineViews(); };
@@ -123,9 +124,6 @@ namespace Buscaminas.Gameplay
             }
         }
 
-        /// <summary>
-        /// Recalculates cell positions and scales. Called on screen resize.
-        /// </summary>
         public void RepositionGrid()
         {
             if (cells == null) return;
@@ -217,10 +215,6 @@ namespace Buscaminas.Gameplay
             BuildCells();
         }
 
-        /// <summary>
-        /// Destroys all existing cells and creates a fresh board and grid.
-        /// Called by the restart button.
-        /// </summary>
         public void RegenerateGrid()
         {
             board = new Board(width, height, mineCount);
@@ -236,10 +230,7 @@ namespace Buscaminas.Gameplay
             BuildCells();
         }
 
-        /// <summary>
-        /// Reveals the cell at (x, y). On a mine hit, reveals all mines and stops the timer.
-        /// Otherwise animates the BFS reveal.
-        /// </summary>
+
         public void RevealCell(int x, int y)
         {
             if (board.IsGameOver || board.IsRevealed(x, y) || board.IsFlagged(x, y)) return;
@@ -255,6 +246,9 @@ namespace Buscaminas.Gameplay
 
                     if (explosionPrefab != null)
                         Instantiate(explosionPrefab, cells[x, y].transform.position, Quaternion.identity);
+
+                    if (audioSource != null && explosionSound != null)
+                        audioSource.PlayOneShot(explosionSound);
 
                     RevealAllMineViews();
                 }
@@ -279,9 +273,7 @@ namespace Buscaminas.Gameplay
             }
         }
 
-        /// <summary>
-        /// Toggles the flag on the cell at (x, y). Updates the UI counter.
-        /// </summary>
+
         public void ToggleFlag(int x, int y)
         {
             if (board.IsGameOver || board.IsRevealed(x, y)) return;

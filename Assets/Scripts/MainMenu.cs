@@ -71,6 +71,8 @@ namespace Buscaminas.Gameplay
 
         void OnPlayClicked()
         {
+            if (MusicManager.Instance != null)
+                MusicManager.Instance.PlayGameMusic();
             SceneManager.LoadScene("Nivel 1");
         }
 
